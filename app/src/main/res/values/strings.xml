@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">iFINDER</string>
+    <string name="title_activity_user_maps">Map</string>
 </resources>
