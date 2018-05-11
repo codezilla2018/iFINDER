@@ -14,7 +14,7 @@ class UserSelectionActivity : AppCompatActivity() {
             startActivity(Intent(this,MainActivity::class.java))
         }
         button.setOnClickListener { v->
-            startActivity(Intent(this,UserActivity::class.java))
+            startActivity(Intent(this,UserMapsActivity::class.java))
         }
     }
 }
