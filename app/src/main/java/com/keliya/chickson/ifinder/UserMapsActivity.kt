@@ -59,8 +59,8 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
         markerOptions.position(latLng)
         markerOptions.title("Current Position")
         markerOptions.draggable(true)
-        markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.map_marker))
-        mCurrLocationMarker = mGoogleMap!!.addMarker(markerOptions)
+        //markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.map_marker))
+       // mCurrLocationMarker = mGoogleMap!!.addMarker(markerOptions)
 
         if(!isCameraFocused){
             mGoogleMap!!.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 14f))
@@ -79,6 +79,7 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_user_maps)
+        supportActionBar!!.hide()
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager
                 .findFragmentById(R.id.map) as SupportMapFragment
