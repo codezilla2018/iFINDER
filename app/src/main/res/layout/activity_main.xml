@@ -34,7 +34,7 @@
         android:layout_marginEnd="42dp"
         android:layout_marginStart="42dp"
         android:layout_marginTop="32dp"
-        android:background="@drawable/my_spinner"
+        android:background="@drawable/my_btn"
         app:layout_constraintBottom_toTopOf="@+id/pick_location"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
