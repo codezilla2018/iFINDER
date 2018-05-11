@@ -13,17 +13,25 @@ import com.google.android.gms.maps.SupportMapFragment
 import android.content.res.Resources.NotFoundException
 import android.location.Location
 import android.os.Build
+import android.os.Handler
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
 import android.util.Log
 import android.widget.Toast
+import com.firebase.geofire.GeoFire
+import com.firebase.geofire.GeoLocation
+import com.firebase.geofire.GeoQuery
+import com.firebase.geofire.GeoQueryEventListener
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.GoogleApiClient
 import com.google.android.gms.location.LocationListener
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.*
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import java.util.*
 
 
 class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
@@ -71,6 +79,9 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
     private lateinit var mGoogleMap: GoogleMap
     var isCameraFocused:Boolean=false
     //internal var mGoogleMap: GoogleMap? = null
+    var ref = FirebaseDatabase.getInstance().getReference("geofire")
+    var uref = FirebaseDatabase.getInstance().getReference("users")
+    var geoFire = GeoFire(ref)
     internal var mapFrag: SupportMapFragment? = null
     internal var mLocationRequest: LocationRequest?=null
     internal var mGoogleApiClient: GoogleApiClient? = null
@@ -84,9 +95,49 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
         val mapFragment = supportFragmentManager
                 .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+        Handler().postDelayed({
+            // This method will be executed once the timer is over
+            updateMap()
+        }, 2000)
+
     }
 
+    fun updateMap(){
 
+
+                val geoQuery : GeoQuery = geoFire!!.queryAtLocation(GeoLocation(mLastLocation!!.latitude, mLastLocation!!.longitude), 7.0)
+                geoQuery.addGeoQueryEventListener(object : GeoQueryEventListener {
+                    override fun onKeyEntered(key: String, location: GeoLocation) {
+                        val latlong:LatLng= LatLng(location.latitude,location.longitude)
+                        mGoogleMap!!.addMarker(MarkerOptions().position(latlong).title("service").icon(BitmapDescriptorFactory.fromResource(R.drawable.map_marker)))
+                        // Toast.makeText(this@SeekerActivity, "providers found in range", Toast.LENGTH_SHORT).show()
+
+                    }
+
+                    override fun onKeyExited(key: String) {
+                        Log.i("TAG", String.format("Provider %s is no longer in the search area", key))
+                        // dialog.hide()
+                    }
+
+                    override fun onKeyMoved(key: String, location: GeoLocation) {
+                        Log.i("TAG", String.format("Provider %s moved within the search area to [%f,%f]", key, location.latitude, location.longitude))
+                        // dialog.hide()
+                    }
+
+                    override fun onGeoQueryReady() {
+                        Log.i("TAG", "onGeoQueryReady")
+                        ////dialog.hide()
+                    }
+
+                    override fun onGeoQueryError(error: DatabaseError) {
+                        Log.e("TAG", "error: " + error)
+                        // dialog.hide()
+                    }
+                })
+
+
+
+    }
     /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.
@@ -126,9 +177,7 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
             buildGoogleApiClient()
             mGoogleMap!!.isMyLocationEnabled = true
         }// Add a marker in Sydney and move the camera
-        val sydney = LatLng(6.9271, 79.8612)
-        mGoogleMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-        mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(sydney,15f))
+
     }
     @Synchronized protected fun buildGoogleApiClient() {
         mGoogleApiClient = GoogleApiClient.Builder(this)
