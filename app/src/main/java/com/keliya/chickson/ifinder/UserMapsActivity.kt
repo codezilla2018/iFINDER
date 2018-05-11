@@ -18,6 +18,9 @@ import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
 import android.util.Log
+import android.view.LayoutInflater
+import android.widget.ArrayAdapter
+import android.widget.Spinner
 import android.widget.Toast
 import com.firebase.geofire.GeoFire
 import com.firebase.geofire.GeoLocation
@@ -29,8 +32,12 @@ import com.google.android.gms.location.LocationListener
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.*
+import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.activity_user_maps.*
 import java.util.*
 
 
@@ -80,13 +87,15 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
     var isCameraFocused:Boolean=false
     //internal var mGoogleMap: GoogleMap? = null
     var ref = FirebaseDatabase.getInstance().getReference("geofire")
-    var uref = FirebaseDatabase.getInstance().getReference("users")
+    var uref = FirebaseDatabase.getInstance().getReference("services")
     var geoFire = GeoFire(ref)
     internal var mapFrag: SupportMapFragment? = null
     internal var mLocationRequest: LocationRequest?=null
     internal var mGoogleApiClient: GoogleApiClient? = null
     internal var mLastLocation: Location?=null
     internal var mCurrLocationMarker: Marker? = null
+    var list_of_items = arrayOf("Cleaning Service", "Day Care", "Labour")
+    var serviceSpinner:Spinner?=null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_user_maps)
@@ -97,45 +106,144 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
         mapFragment.getMapAsync(this)
         Handler().postDelayed({
             // This method will be executed once the timer is over
-            updateMap()
+            updateMap("",true)
         }, 2000)
+        btn_select_service.setOnClickListener { v->
+            dialodServiceShow()
+        }
 
     }
+    fun dialodServiceShow(){
+        val dialogView=LayoutInflater.from(this).inflate(R.layout.dialod_service_select,null)
+        serviceSpinner=dialogView.findViewById(R.id.spinner)
+        val aa = ArrayAdapter(this, android.R.layout.simple_spinner_item, list_of_items)
+        aa.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        serviceSpinner!!.setAdapter(aa)
+        var title="SELECT A SERVICE"
+        val builder=AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setTitle(title)
+                .setPositiveButton("Search",null)
+                .setNegativeButton("Cancel",null)
+        val dialog=builder.show()
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener({
+            dialog.dismiss()
+            updateMap(serviceSpinner!!.selectedItem.toString(),false)
+           //Toast.makeText(this@UserMapsActivity, serviceSpinner!!.selectedItem.toString(), Toast.LENGTH_SHORT).show()
+        })
+    }
 
-    fun updateMap(){
+    fun updateMap(selectedIndex:String,firstTime:Boolean){
+        mGoogleMap.clear()
+        if (firstTime==true) {
+            val geoQuery: GeoQuery = geoFire!!.queryAtLocation(GeoLocation(mLastLocation!!.latitude, mLastLocation!!.longitude), 7.0)
+            geoQuery.addGeoQueryEventListener(object : GeoQueryEventListener {
+                override fun onKeyEntered(key: String, location: GeoLocation) {
+                    uref.addValueEventListener( object : ValueEventListener {
+                        override fun onDataChange(dataSnapshot: DataSnapshot) {
 
-
-                val geoQuery : GeoQuery = geoFire!!.queryAtLocation(GeoLocation(mLastLocation!!.latitude, mLastLocation!!.longitude), 7.0)
-                geoQuery.addGeoQueryEventListener(object : GeoQueryEventListener {
-                    override fun onKeyEntered(key: String, location: GeoLocation) {
-                        val latlong:LatLng= LatLng(location.latitude,location.longitude)
-                        mGoogleMap!!.addMarker(MarkerOptions().position(latlong).title("service").icon(BitmapDescriptorFactory.fromResource(R.drawable.map_marker)))
-                        // Toast.makeText(this@SeekerActivity, "providers found in range", Toast.LENGTH_SHORT).show()
-
-                    }
-
-                    override fun onKeyExited(key: String) {
-                        Log.i("TAG", String.format("Provider %s is no longer in the search area", key))
-                        // dialog.hide()
-                    }
-
-                    override fun onKeyMoved(key: String, location: GeoLocation) {
-                        Log.i("TAG", String.format("Provider %s moved within the search area to [%f,%f]", key, location.latitude, location.longitude))
-                        // dialog.hide()
-                    }
-
-                    override fun onGeoQueryReady() {
-                        Log.i("TAG", "onGeoQueryReady")
-                        ////dialog.hide()
-                    }
-
-                    override fun onGeoQueryError(error: DatabaseError) {
-                        Log.e("TAG", "error: " + error)
-                        // dialog.hide()
-                    }
-                })
+                            for (dsp in dataSnapshot.getChildren()) {
+                                if(key==dsp.key.toString()) {
 
 
+                                    Toast.makeText(this@UserMapsActivity, "Services found.", Toast.LENGTH_SHORT).show()
+                                    val latlong: LatLng = LatLng(location.latitude, location.longitude)
+                                    mGoogleMap!!.addMarker(MarkerOptions().snippet(dataSnapshot.child(dsp.key.toString()).child("servicename").getValue(String::class.java)!!).position(latlong).title(dataSnapshot.child(dsp.key.toString()).child("category").getValue(String::class.java)!!).icon(BitmapDescriptorFactory.fromResource(R.drawable.map_marker)))
+                                }
+                            }
+
+
+
+                        }
+                        override fun onCancelled(error: DatabaseError) {
+                            // Failed to read value
+
+                            Toast.makeText(this@UserMapsActivity, "not read", Toast.LENGTH_LONG).show()
+                        }
+                    })
+
+
+                }
+
+                override fun onKeyExited(key: String) {
+                    Log.i("TAG", String.format("Provider %s is no longer in the search area", key))
+                    // dialog.hide()
+                }
+
+                override fun onKeyMoved(key: String, location: GeoLocation) {
+                    Log.i("TAG", String.format("Provider %s moved within the search area to [%f,%f]", key, location.latitude, location.longitude))
+                    // dialog.hide()
+                }
+
+                override fun onGeoQueryReady() {
+                    Log.i("TAG", "onGeoQueryReady")
+                    ////dialog.hide()
+                }
+
+                override fun onGeoQueryError(error: DatabaseError) {
+                    Log.e("TAG", "error: " + error)
+                    // dialog.hide()
+                }
+            })
+        }else{
+            val geoQuery: GeoQuery = geoFire!!.queryAtLocation(GeoLocation(mLastLocation!!.latitude, mLastLocation!!.longitude), 7.0)
+            geoQuery.addGeoQueryEventListener(object : GeoQueryEventListener {
+                var found=false
+                override fun onKeyEntered(key: String, location: GeoLocation) {
+                    uref.addValueEventListener( object : ValueEventListener {
+                        override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+                            for (dsp in dataSnapshot.getChildren()) {
+                                if(key==dsp.key.toString()){
+
+                                    if(selectedIndex==dataSnapshot.child(dsp.key.toString()).child("category").getValue(String::class.java)!!){
+                                        found=true
+                                        Toast.makeText(this@UserMapsActivity, selectedIndex+" Found", Toast.LENGTH_SHORT).show()
+                                        val latlong: LatLng = LatLng(location.latitude, location.longitude)
+                                        mGoogleMap!!.addMarker(MarkerOptions().snippet(dataSnapshot.child(dsp.key.toString()).child("servicename").getValue(String::class.java)!!).position(latlong).title(dataSnapshot.child(dsp.key.toString()).child("category").getValue(String::class.java)!!).icon(BitmapDescriptorFactory.fromResource(R.drawable.map_marker)))
+                                    }
+
+                                }
+                            }
+                            if(!found){
+                                Toast.makeText(this@UserMapsActivity, "No Services Found.", Toast.LENGTH_SHORT).show()
+                            }
+
+
+
+                        }
+                        override fun onCancelled(error: DatabaseError) {
+                            // Failed to read value
+
+                            Toast.makeText(this@UserMapsActivity, "not read", Toast.LENGTH_LONG).show()
+                        }
+                    })
+
+                    // Toast.makeText(this@SeekerActivity, "providers found in range", Toast.LENGTH_SHORT).show()
+
+                }
+
+                override fun onKeyExited(key: String) {
+                    Log.i("TAG", String.format("Provider %s is no longer in the search area", key))
+                    // dialog.hide()
+                }
+
+                override fun onKeyMoved(key: String, location: GeoLocation) {
+                    Log.i("TAG", String.format("Provider %s moved within the search area to [%f,%f]", key, location.latitude, location.longitude))
+                    // dialog.hide()
+                }
+
+                override fun onGeoQueryReady() {
+                    Log.i("TAG", "onGeoQueryReady")
+                    ////dialog.hide()
+                }
+
+                override fun onGeoQueryError(error: DatabaseError) {
+                    Log.e("TAG", "error: " + error)
+                    // dialog.hide()
+                }
+            })
+        }
 
     }
     /**
@@ -177,6 +285,22 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
             buildGoogleApiClient()
             mGoogleMap!!.isMyLocationEnabled = true
         }// Add a marker in Sydney and move the camera
+        mGoogleMap.setOnMarkerClickListener(object : GoogleMap.OnMarkerClickListener {
+            override  fun onMarkerClick(marker:Marker): Boolean {
+
+                val builder=AlertDialog.Builder(this@UserMapsActivity)
+                        .setTitle(marker.snippet)
+                        .setPositiveButton("Contact",null)
+                        .setNegativeButton("Cancel",null)
+                val dialog=builder.show()
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener({
+                    dialog.dismiss()
+
+                    //Toast.makeText(this@UserMapsActivity, serviceSpinner!!.selectedItem.toString(), Toast.LENGTH_SHORT).show()
+                })
+                return false
+            }
+        })
 
     }
     @Synchronized protected fun buildGoogleApiClient() {
