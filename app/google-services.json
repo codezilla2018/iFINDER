@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "986291578491",
+    "firebase_url": "https://ifinder2-862b2.firebaseio.com",
+    "project_id": "ifinder2-862b2",
+    "storage_bucket": "ifinder2-862b2.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:986291578491:android:08549051407fa046",
+        "android_client_info": {
+          "package_name": "com.keliya.chickson.ifinder"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "986291578491-1v9tfhbkqer8hartmt0prf0ohn55o7i4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.keliya.chickson.ifinder",
+            "certificate_hash": "f4a177ce1ac797017e524916eccffce2b135b15b"
+          }
+        },
+        {
+          "client_id": "986291578491-2dsqok4j85v30qrgdb3v5deldtc50g4d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjx8ojIsq4oTFb0tnJYuEq8UApjvfcs1Y"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "986291578491-2dsqok4j85v30qrgdb3v5deldtc50g4d.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
