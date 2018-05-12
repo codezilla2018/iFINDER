@@ -1,10 +1,12 @@
 package com.keliya.chickson.ifinder
 
 import android.content.DialogInterface
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.graphics.Color
 import android.location.Location
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -200,9 +202,9 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
                                     Toast.makeText(this@UserMapsActivity, "Services found.", Toast.LENGTH_SHORT).show()
                                     val latlong: LatLng = LatLng(location.latitude, location.longitude)
                                     val marker=mGoogleMap!!.addMarker(MarkerOptions()
-                                            .snippet(dataSnapshot.child(dsp.key.toString()).child("servicename").getValue(String::class.java)!!)
+                                            .title(dataSnapshot.child(dsp.key.toString()).child("servicename").getValue(String::class.java)!!)
                                             .position(latlong)
-                                            .title(dataSnapshot.child(dsp.key.toString()).child("category").getValue(String::class.java)!!)
+                                            .snippet(dataSnapshot.child(dsp.key.toString()).child("category").getValue(String::class.java)!!)
                                             .icon(BitmapDescriptorFactory.fromResource(R.drawable.map_marker)))
 
                                 }
@@ -257,9 +259,9 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
                                         Toast.makeText(this@UserMapsActivity, selectedIndex+" Found", Toast.LENGTH_SHORT).show()
                                         val latlong: LatLng = LatLng(location.latitude, location.longitude)
                                         val marker=mGoogleMap!!.addMarker(MarkerOptions()
-                                                .snippet(dataSnapshot.child(dsp.key.toString()).child("servicename").getValue(String::class.java)!!)
+                                                .title(dataSnapshot.child(dsp.key.toString()).child("servicename").getValue(String::class.java)!!)
                                                 .position(latlong)
-                                                .title(dataSnapshot.child(dsp.key.toString()).child("category").getValue(String::class.java)!!)
+                                                .snippet(dataSnapshot.child(dsp.key.toString()).child("category").getValue(String::class.java)!!)
                                                 .icon(BitmapDescriptorFactory.fromResource(R.drawable.map_marker)))
 
                                     }
@@ -312,8 +314,26 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
         mGoogleMap = googleMap
         mGoogleMap.setOnInfoWindowClickListener(object  : GoogleMap.OnInfoWindowClickListener {
             override fun onInfoWindowClick(marker: Marker?) {
-                Toast.makeText(this@UserMapsActivity, marker!!.title+" marker clicked", Toast.LENGTH_SHORT).show()
-                marker.hideInfoWindow()
+                //Toast.makeText(this@UserMapsActivity, marker!!.title+" marker clicked", Toast.LENGTH_SHORT).show()
+                marker!!.hideInfoWindow()
+                val dialogView=LayoutInflater.from(this@UserMapsActivity).inflate(R.layout.dialod_infowindow_clicked,null)
+                val serviceType=dialogView.findViewById<TextView>(R.id.textView)
+                serviceType.text=marker.snippet
+                var title=marker.title
+                val builder=AlertDialog.Builder(this@UserMapsActivity)
+                        .setView(dialogView)
+                        .setTitle(title)
+                        .setPositiveButton("Contact",null)
+                        .setNegativeButton("Cancel",null)
+                val dialog=builder.show()
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener({
+                    dialog.dismiss()
+                    val number="0111"
+                    val intent=Intent(Intent.ACTION_DIAL)
+                    intent.data= Uri.parse("tel:$number")
+                    startActivity(intent)
+                    Toast.makeText(this@UserMapsActivity, "calling", Toast.LENGTH_SHORT).show()
+                })
             }
 
         })
@@ -393,6 +413,7 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
             }
         }
     }
+
     override fun onRequestPermissionsResult(requestCode: Int,
                                             permissions: Array<String>, grantResults: IntArray) {
         when (requestCode) {
