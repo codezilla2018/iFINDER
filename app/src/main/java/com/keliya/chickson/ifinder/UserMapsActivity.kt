@@ -3,25 +3,21 @@ package com.keliya.chickson.ifinder
 import android.content.DialogInterface
 import android.content.pm.PackageManager
 import android.content.res.Resources
-import android.support.v7.app.AppCompatActivity
-import android.os.Bundle
-
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.SupportMapFragment
-import android.content.res.Resources.NotFoundException
+import android.graphics.Color
 import android.location.Location
 import android.os.Build
+import android.os.Bundle
 import android.os.Handler
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
+import android.support.v7.app.AppCompatActivity
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.view.LayoutInflater
-import android.widget.ArrayAdapter
-import android.widget.Spinner
-import android.widget.Toast
+import android.view.View
+import android.widget.*
 import com.firebase.geofire.GeoFire
 import com.firebase.geofire.GeoLocation
 import com.firebase.geofire.GeoQuery
@@ -31,14 +27,16 @@ import com.google.android.gms.common.api.GoogleApiClient
 import com.google.android.gms.location.LocationListener
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_user_maps.*
-import java.util.*
 
 
 class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
@@ -89,6 +87,8 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
     var ref = FirebaseDatabase.getInstance().getReference("geofire")
     var uref = FirebaseDatabase.getInstance().getReference("services")
     var geoFire = GeoFire(ref)
+    lateinit var btn:Button
+    var rendered=false
     internal var mapFrag: SupportMapFragment? = null
     internal var mLocationRequest: LocationRequest?=null
     internal var mGoogleApiClient: GoogleApiClient? = null
@@ -96,6 +96,56 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
     internal var mCurrLocationMarker: Marker? = null
     var list_of_items = arrayOf("Cleaning Service", "Day Care", "Labour")
     var serviceSpinner:Spinner?=null
+
+    internal inner class CustomInfoWindowAdapter : GoogleMap.InfoWindowAdapter {
+
+        // These are both view groups containing an ImageView with id "badge" and two
+        // TextViews with id "title" and "snippet".
+        private val window: View = layoutInflater.inflate(R.layout.custom_info_window, null)
+        private val contents: View = layoutInflater.inflate(R.layout.custom_info_contents, null)
+
+        override fun getInfoWindow(marker: Marker): View? {
+
+            render(marker, window)
+            return window
+        }
+
+        override fun getInfoContents(marker: Marker): View? {
+
+            render(marker, contents)
+            return contents
+        }
+
+        private fun render(marker: Marker, view: View) {
+
+            btn=view.findViewById<Button>(R.id.button2)
+
+            // Set the title and snippet for the custom info window
+            val title: String? = marker.title
+            val titleUi = view.findViewById<TextView>(R.id.title)
+
+            if (title != null) {
+                // Spannable string allows us to edit the formatting of the text.
+                titleUi.text = SpannableString(title).apply {
+                    setSpan(ForegroundColorSpan(Color.WHITE), 0, length, 0)
+                }
+            } else {
+                titleUi.text = ""
+            }
+
+            val snippet: String? = marker.snippet
+            val snippetUi = view.findViewById<TextView>(R.id.snippet)
+            if (snippet != null ) {
+                snippetUi.text = SpannableString(snippet).apply {
+
+                    setSpan(ForegroundColorSpan(Color.WHITE), 0, snippet.length, 0)
+                }
+            } else {
+                snippetUi.text = ""
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_user_maps)
@@ -111,6 +161,7 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
         btn_select_service.setOnClickListener { v->
             dialodServiceShow()
         }
+
 
     }
     fun dialodServiceShow(){
@@ -148,7 +199,12 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
 
                                     Toast.makeText(this@UserMapsActivity, "Services found.", Toast.LENGTH_SHORT).show()
                                     val latlong: LatLng = LatLng(location.latitude, location.longitude)
-                                    mGoogleMap!!.addMarker(MarkerOptions().snippet(dataSnapshot.child(dsp.key.toString()).child("servicename").getValue(String::class.java)!!).position(latlong).title(dataSnapshot.child(dsp.key.toString()).child("category").getValue(String::class.java)!!).icon(BitmapDescriptorFactory.fromResource(R.drawable.map_marker)))
+                                    val marker=mGoogleMap!!.addMarker(MarkerOptions()
+                                            .snippet(dataSnapshot.child(dsp.key.toString()).child("servicename").getValue(String::class.java)!!)
+                                            .position(latlong)
+                                            .title(dataSnapshot.child(dsp.key.toString()).child("category").getValue(String::class.java)!!)
+                                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.map_marker)))
+
                                 }
                             }
 
@@ -200,7 +256,12 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
                                         found=true
                                         Toast.makeText(this@UserMapsActivity, selectedIndex+" Found", Toast.LENGTH_SHORT).show()
                                         val latlong: LatLng = LatLng(location.latitude, location.longitude)
-                                        mGoogleMap!!.addMarker(MarkerOptions().snippet(dataSnapshot.child(dsp.key.toString()).child("servicename").getValue(String::class.java)!!).position(latlong).title(dataSnapshot.child(dsp.key.toString()).child("category").getValue(String::class.java)!!).icon(BitmapDescriptorFactory.fromResource(R.drawable.map_marker)))
+                                        val marker=mGoogleMap!!.addMarker(MarkerOptions()
+                                                .snippet(dataSnapshot.child(dsp.key.toString()).child("servicename").getValue(String::class.java)!!)
+                                                .position(latlong)
+                                                .title(dataSnapshot.child(dsp.key.toString()).child("category").getValue(String::class.java)!!)
+                                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.map_marker)))
+
                                     }
 
                                 }
@@ -246,24 +307,22 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
         }
 
     }
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
+
     override fun onMapReady(googleMap: GoogleMap) {
         mGoogleMap = googleMap
+        mGoogleMap.setOnInfoWindowClickListener(object  : GoogleMap.OnInfoWindowClickListener {
+            override fun onInfoWindowClick(marker: Marker?) {
+                Toast.makeText(this@UserMapsActivity, marker!!.title+" marker clicked", Toast.LENGTH_SHORT).show()
+                marker.hideInfoWindow()
+            }
+
+        })
+
+
         try {
-            // Customise the styling of the base map using a JSON object defined
-            // in a raw resource file.
             val success = googleMap.setMapStyle(
                     MapStyleOptions.loadRawResourceStyle(
                             this, R.raw.style))
-
             if (!success) {
                // Log.e(FragmentActivity.TAG, "Style parsing failed.")
             }
@@ -284,23 +343,8 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
         } else {
             buildGoogleApiClient()
             mGoogleMap!!.isMyLocationEnabled = true
-        }// Add a marker in Sydney and move the camera
-        mGoogleMap.setOnMarkerClickListener(object : GoogleMap.OnMarkerClickListener {
-            override  fun onMarkerClick(marker:Marker): Boolean {
-
-                val builder=AlertDialog.Builder(this@UserMapsActivity)
-                        .setTitle(marker.snippet)
-                        .setPositiveButton("Contact",null)
-                        .setNegativeButton("Cancel",null)
-                val dialog=builder.show()
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener({
-                    dialog.dismiss()
-
-                    //Toast.makeText(this@UserMapsActivity, serviceSpinner!!.selectedItem.toString(), Toast.LENGTH_SHORT).show()
-                })
-                return false
-            }
-        })
+        }
+        mGoogleMap.setInfoWindowAdapter(CustomInfoWindowAdapter())
 
     }
     @Synchronized protected fun buildGoogleApiClient() {
