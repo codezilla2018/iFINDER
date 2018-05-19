@@ -9,7 +9,7 @@ import android.location.Location
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
+import android.support.design.widget.TextInputEditText
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
@@ -20,6 +20,8 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.*
+import cc.cloudist.acplibrary.ACProgressConstant
+import cc.cloudist.acplibrary.ACProgressPie
 import com.firebase.geofire.GeoFire
 import com.firebase.geofire.GeoLocation
 import com.firebase.geofire.GeoQuery
@@ -55,11 +57,11 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
     }
 
     override fun onConnectionSuspended(p0: Int) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        TODO("not implemented")
     }
 
     override fun onConnectionFailed(p0: ConnectionResult) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        TODO("not implemented")
     }
 
     override fun onLocationChanged(location: Location) {
@@ -67,16 +69,11 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
         if (mCurrLocationMarker != null) {
             mCurrLocationMarker!!.remove()
         }
-        //Place current location marker
         val latLng = LatLng(location.latitude, location.longitude)
-        // mDatabase!!.child("users").child(userId).setValue(latLng)
-        val markerOptions = MarkerOptions()
-        markerOptions.position(latLng)
-        markerOptions.title("Current Position")
-        markerOptions.draggable(true)
-        //markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.map_marker))
-       // mCurrLocationMarker = mGoogleMap!!.addMarker(markerOptions)
-
+        if(first) {
+            updateMap("test", true)
+            first=false
+        }
         if(!isCameraFocused){
             mGoogleMap!!.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 14f))
             isCameraFocused=true
@@ -85,56 +82,42 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
 
     private lateinit var mGoogleMap: GoogleMap
     var isCameraFocused:Boolean=false
-    //internal var mGoogleMap: GoogleMap? = null
     var ref = FirebaseDatabase.getInstance().getReference("geofire")
     var uref = FirebaseDatabase.getInstance().getReference("services")
     var geoFire = GeoFire(ref)
     lateinit var btn:Button
-    var rendered=false
-    internal var mapFrag: SupportMapFragment? = null
+    var first=true
     internal var mLocationRequest: LocationRequest?=null
     internal var mGoogleApiClient: GoogleApiClient? = null
     internal var mLastLocation: Location?=null
     internal var mCurrLocationMarker: Marker? = null
-    var list_of_items = arrayOf("Cleaning Service", "Day Care", "Labour")
     var serviceSpinner:Spinner?=null
-
+    lateinit var showAll:Button
+    var backButtonCount = 0
+    lateinit var  dialogs:ACProgressPie
     internal inner class CustomInfoWindowAdapter : GoogleMap.InfoWindowAdapter {
-
-        // These are both view groups containing an ImageView with id "badge" and two
-        // TextViews with id "title" and "snippet".
         private val window: View = layoutInflater.inflate(R.layout.custom_info_window, null)
         private val contents: View = layoutInflater.inflate(R.layout.custom_info_contents, null)
-
         override fun getInfoWindow(marker: Marker): View? {
-
             render(marker, window)
             return window
         }
 
         override fun getInfoContents(marker: Marker): View? {
-
             render(marker, contents)
             return contents
         }
-
         private fun render(marker: Marker, view: View) {
-
             btn=view.findViewById<Button>(R.id.button2)
-
-            // Set the title and snippet for the custom info window
             val title: String? = marker.title
             val titleUi = view.findViewById<TextView>(R.id.title)
-
             if (title != null) {
-                // Spannable string allows us to edit the formatting of the text.
                 titleUi.text = SpannableString(title).apply {
                     setSpan(ForegroundColorSpan(Color.WHITE), 0, length, 0)
                 }
             } else {
                 titleUi.text = ""
             }
-
             val snippet: String? = marker.snippet
             val snippetUi = view.findViewById<TextView>(R.id.snippet)
             if (snippet != null ) {
@@ -148,30 +131,62 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
         }
     }
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_user_maps)
         supportActionBar!!.hide()
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager
                 .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
-        Handler().postDelayed({
-            // This method will be executed once the timer is over
-            updateMap("",true)
-        }, 2000)
+        val btnEffect=ButtonEffects()
+        Thread().run{
+            btnEffect.buttonEffect(btn_select_service)
+            btnEffect.buttonEffect(add_service)
+        }
         btn_select_service.setOnClickListener { v->
             dialodServiceShow()
         }
+        add_service.setOnClickListener { v->
+            dialogAdminLogin()
+        }
+        my_location.setOnClickListener { v->
+            mGoogleMap.animateCamera(CameraUpdateFactory.newLatLng(LatLng(mLastLocation!!.latitude,mLastLocation!!.longitude)))
+        }
+        dialogs = ACProgressPie.Builder(this)
+                .ringColor(Color.WHITE)
+                .pieColor(Color.WHITE)
+                .updateType(ACProgressConstant.PIE_AUTO_UPDATE)
+                .build()
+        dialogs.show()
+    }
 
+    override fun onBackPressed() {
+        if (backButtonCount >= 1) {
+            val intent = Intent(Intent.ACTION_MAIN)
+            intent.addCategory(Intent.CATEGORY_HOME)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            startActivity(intent)
+        } else {
+            Toast.makeText(applicationContext, "Press the back button once again to close the application.", Toast.LENGTH_LONG).show()
+            backButtonCount++
+        }
 
     }
     fun dialodServiceShow(){
         val dialogView=LayoutInflater.from(this).inflate(R.layout.dialod_service_select,null)
         serviceSpinner=dialogView.findViewById(R.id.spinner)
-        val aa = ArrayAdapter(this, android.R.layout.simple_spinner_item, list_of_items)
+        val aa = ArrayAdapter.createFromResource(this, R.array.category_list, android.R.layout.simple_spinner_item)
         aa.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         serviceSpinner!!.setAdapter(aa)
+
+        if(Build.VERSION.SDK_INT>23)
+            serviceSpinner!!.setBackgroundResource(R.drawable.my_spinner)
+
+        showAll=dialogView.findViewById(R.id.button3)
+
+
+
         var title="SELECT A SERVICE"
         val builder=AlertDialog.Builder(this)
                 .setView(dialogView)
@@ -182,13 +197,43 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener({
             dialog.dismiss()
             updateMap(serviceSpinner!!.selectedItem.toString(),false)
-           //Toast.makeText(this@UserMapsActivity, serviceSpinner!!.selectedItem.toString(), Toast.LENGTH_SHORT).show()
+
         })
+        val btnEf=ButtonEffects()
+        Thread().run(){
+            btnEf.buttonEffect(showAll)
+        }
+        showAll.setOnClickListener { v->
+            updateMap("",true)
+            dialog.dismiss()
+        }
+    }
+    fun dialogAdminLogin(){
+        val dialogView=LayoutInflater.from(this).inflate(R.layout.dialog_admin_login,null)
+        val tv=dialogView.findViewById<TextInputEditText>(R.id.password)
+        var title="Login"
+        val builder=AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setTitle(title)
+                .setPositiveButton("Login",null)
+                .setNegativeButton("Cancel",null)
+        val dialog=builder.show()
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener({
+
+            if(tv.text.toString()=="admin"){
+                tv.error=null
+                dialog.dismiss()
+                startActivity(Intent(this,MainActivity::class.java))
+            }else{
+                tv.error="Wrong Password.\n(Developing purpose enter password as \"admin\".)"
+            }
+        })
+
     }
 
     fun updateMap(selectedIndex:String,firstTime:Boolean){
         mGoogleMap.clear()
-        if (firstTime==true) {
+        if (firstTime) {
             val geoQuery: GeoQuery = geoFire!!.queryAtLocation(GeoLocation(mLastLocation!!.latitude, mLastLocation!!.longitude), 7.0)
             geoQuery.addGeoQueryEventListener(object : GeoQueryEventListener {
                 override fun onKeyEntered(key: String, location: GeoLocation) {
@@ -198,24 +243,24 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
                             for (dsp in dataSnapshot.getChildren()) {
                                 if(key==dsp.key.toString()) {
 
-
-                                    Toast.makeText(this@UserMapsActivity, "Services found.", Toast.LENGTH_SHORT).show()
-                                    val latlong: LatLng = LatLng(location.latitude, location.longitude)
-                                    val marker=mGoogleMap!!.addMarker(MarkerOptions()
-                                            .title(dataSnapshot.child(dsp.key.toString()).child("servicename").getValue(String::class.java)!!)
-                                            .position(latlong)
-                                            .snippet(dataSnapshot.child(dsp.key.toString()).child("category").getValue(String::class.java)!!)
-                                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.map_marker)))
-
+                                    val latlong= LatLng(location.latitude, location.longitude)
+                                    if(Build.VERSION.SDK_INT>23){
+                                        mGoogleMap!!.addMarker(MarkerOptions()
+                                                .title(dataSnapshot.child(dsp.key.toString()).child("servicename").getValue(String::class.java)!!)
+                                                .position(latlong)
+                                                .snippet(dataSnapshot.child(dsp.key.toString()).child("category").getValue(String::class.java)!!)
+                                                .icon(BitmapDescriptorFactory.defaultMarker(150f)))
+                                    }else{
+                                        mGoogleMap!!.addMarker(MarkerOptions()
+                                                .title(dataSnapshot.child(dsp.key.toString()).child("servicename").getValue(String::class.java)!!)
+                                                .position(latlong)
+                                                .snippet("(CLICK HERE TO MORE)")
+                                                .icon(BitmapDescriptorFactory.defaultMarker(150f)))
+                                    }
                                 }
                             }
-
-
-
                         }
                         override fun onCancelled(error: DatabaseError) {
-                            // Failed to read value
-
                             Toast.makeText(this@UserMapsActivity, "not read", Toast.LENGTH_LONG).show()
                         }
                     })
@@ -225,24 +270,27 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
 
                 override fun onKeyExited(key: String) {
                     Log.i("TAG", String.format("Provider %s is no longer in the search area", key))
-                    // dialog.hide()
+
                 }
 
                 override fun onKeyMoved(key: String, location: GeoLocation) {
                     Log.i("TAG", String.format("Provider %s moved within the search area to [%f,%f]", key, location.latitude, location.longitude))
-                    // dialog.hide()
+
                 }
 
                 override fun onGeoQueryReady() {
                     Log.i("TAG", "onGeoQueryReady")
-                    ////dialog.hide()
+
                 }
 
                 override fun onGeoQueryError(error: DatabaseError) {
                     Log.e("TAG", "error: " + error)
-                    // dialog.hide()
+
                 }
+
             })
+            if(dialogs.isShowing)
+                dialogs.hide()
         }else{
             val geoQuery: GeoQuery = geoFire!!.queryAtLocation(GeoLocation(mLastLocation!!.latitude, mLastLocation!!.longitude), 7.0)
             geoQuery.addGeoQueryEventListener(object : GeoQueryEventListener {
@@ -257,12 +305,20 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
                                     if(selectedIndex==dataSnapshot.child(dsp.key.toString()).child("category").getValue(String::class.java)!!){
                                         found=true
                                         Toast.makeText(this@UserMapsActivity, selectedIndex+" Found", Toast.LENGTH_SHORT).show()
-                                        val latlong: LatLng = LatLng(location.latitude, location.longitude)
-                                        val marker=mGoogleMap!!.addMarker(MarkerOptions()
-                                                .title(dataSnapshot.child(dsp.key.toString()).child("servicename").getValue(String::class.java)!!)
-                                                .position(latlong)
-                                                .snippet(dataSnapshot.child(dsp.key.toString()).child("category").getValue(String::class.java)!!)
-                                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.map_marker)))
+                                        val latlong = LatLng(location.latitude, location.longitude)
+                                        if(Build.VERSION.SDK_INT>23){
+                                            mGoogleMap!!.addMarker(MarkerOptions()
+                                                    .title(dataSnapshot.child(dsp.key.toString()).child("servicename").getValue(String::class.java)!!)
+                                                    .position(latlong)
+                                                    .snippet(dataSnapshot.child(dsp.key.toString()).child("category").getValue(String::class.java)!!)
+                                                    .icon(BitmapDescriptorFactory.defaultMarker(150f)))
+                                        }else{
+                                            mGoogleMap!!.addMarker(MarkerOptions()
+                                                    .title(dataSnapshot.child(dsp.key.toString()).child("servicename").getValue(String::class.java)!!)
+                                                    .position(latlong)
+                                                    .snippet("(CLICK HERE TO MORE)")
+                                                    .icon(BitmapDescriptorFactory.defaultMarker(150f)))
+                                        }
 
                                     }
 
@@ -271,19 +327,11 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
                             if(!found){
                                 Toast.makeText(this@UserMapsActivity, "No Services Found.", Toast.LENGTH_SHORT).show()
                             }
-
-
-
                         }
                         override fun onCancelled(error: DatabaseError) {
-                            // Failed to read value
-
                             Toast.makeText(this@UserMapsActivity, "not read", Toast.LENGTH_LONG).show()
                         }
                     })
-
-                    // Toast.makeText(this@SeekerActivity, "providers found in range", Toast.LENGTH_SHORT).show()
-
                 }
 
                 override fun onKeyExited(key: String) {
@@ -312,42 +360,61 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
 
     override fun onMapReady(googleMap: GoogleMap) {
         mGoogleMap = googleMap
+        mGoogleMap.uiSettings.isMyLocationButtonEnabled=false
         mGoogleMap.setOnInfoWindowClickListener(object  : GoogleMap.OnInfoWindowClickListener {
             override fun onInfoWindowClick(marker: Marker?) {
-                //Toast.makeText(this@UserMapsActivity, marker!!.title+" marker clicked", Toast.LENGTH_SHORT).show()
+
                 marker!!.hideInfoWindow()
-                val dialogView=LayoutInflater.from(this@UserMapsActivity).inflate(R.layout.dialod_infowindow_clicked,null)
-                val serviceType=dialogView.findViewById<TextView>(R.id.textView)
-                serviceType.text=marker.snippet
-                var title=marker.title
-                val builder=AlertDialog.Builder(this@UserMapsActivity)
-                        .setView(dialogView)
-                        .setTitle(title)
-                        .setPositiveButton("Contact",null)
-                        .setNegativeButton("Cancel",null)
-                val dialog=builder.show()
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener({
-                    dialog.dismiss()
-                    val number="0111"
-                    val intent=Intent(Intent.ACTION_DIAL)
-                    intent.data= Uri.parse("tel:$number")
-                    startActivity(intent)
-                    Toast.makeText(this@UserMapsActivity, "calling", Toast.LENGTH_SHORT).show()
+                uref.addValueEventListener( object : ValueEventListener {
+                    override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+                        for (dsp in dataSnapshot.getChildren()) {
+                            if(marker.title==dsp.key.toString()){
+                                val dialogView=LayoutInflater.from(this@UserMapsActivity).inflate(R.layout.dialod_infowindow_clicked,null)
+                                val serviceType=dialogView.findViewById<TextView>(R.id.textView)
+                                val telephoneNo=dialogView.findViewById<TextView>(R.id.textView2)
+                                val addressTV=dialogView.findViewById<TextView>(R.id.address)
+                                addressTV.text="Address: "+dataSnapshot.child(dsp.key.toString()).child("address").getValue(String::class.java)!!
+                                telephoneNo.text="Tele No: "+dataSnapshot.child(dsp.key.toString()).child("telephone").getValue(String::class.java)!!
+                                serviceType.text=dataSnapshot.child(dsp.key.toString()).child("category").getValue(String::class.java)!!
+                                var title=marker.title
+                                val builder=AlertDialog.Builder(this@UserMapsActivity)
+                                        .setView(dialogView)
+                                        .setTitle(title)
+                                        .setPositiveButton("Contact",null)
+                                        .setNegativeButton("Cancel",null)
+                                val dialog=builder.show()
+                                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener({
+                                    dialog.dismiss()
+                                    val number=dataSnapshot.child(dsp.key.toString()).child("telephone").getValue(String::class.java)!!
+                                    val intent=Intent(Intent.ACTION_DIAL)
+                                    intent.data= Uri.parse("tel:$number")
+                                    startActivity(intent)
+                                    Toast.makeText(this@UserMapsActivity, "calling", Toast.LENGTH_SHORT).show()
+                                })
+                            }
+                        }
+
+
+
+                    }
+                    override fun onCancelled(error: DatabaseError) {
+                        Toast.makeText(this@UserMapsActivity, "not read", Toast.LENGTH_LONG).show()
+                    }
                 })
+
             }
 
         })
 
 
         try {
-            val success = googleMap.setMapStyle(
+            googleMap.setMapStyle(
                     MapStyleOptions.loadRawResourceStyle(
                             this, R.raw.style))
-            if (!success) {
-               // Log.e(FragmentActivity.TAG, "Style parsing failed.")
-            }
+
         } catch (e: Resources.NotFoundException) {
-           // Log.e(FragmentActivity.TAG, "Can't find style. Error: ", e)
+
         }
 
         if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -355,7 +422,7 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
                     android.Manifest.permission.ACCESS_FINE_LOCATION) === PackageManager.PERMISSION_GRANTED) {
                 //Location Permission already granted
                 buildGoogleApiClient()
-                mGoogleMap!!.isMyLocationEnabled = true
+              mGoogleMap!!.isMyLocationEnabled = true
             } else {
                 //Request Location Permission
                 checkLocationPermission()
@@ -364,7 +431,9 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
             buildGoogleApiClient()
             mGoogleMap!!.isMyLocationEnabled = true
         }
-        mGoogleMap.setInfoWindowAdapter(CustomInfoWindowAdapter())
+        if(Build.VERSION.SDK_INT>23) {
+            mGoogleMap.setInfoWindowAdapter(CustomInfoWindowAdapter())
+        }
 
     }
     @Synchronized protected fun buildGoogleApiClient() {
@@ -381,24 +450,19 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
     }
     override fun onPause() {
         super.onPause()
-        //stop location updates when Activity is no longer active
         if (mGoogleApiClient != null) {
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this)
         }
     }
     private fun checkLocationPermission() {
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) !== PackageManager.PERMISSION_GRANTED) {
-            // Should we show an explanation?
+
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     android.Manifest.permission.ACCESS_FINE_LOCATION)) {
-                // Show an explanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
                 AlertDialog.Builder(this)
                         .setTitle("Location Permission Needed")
                         .setMessage("This app needs the Location permission, please accept to use location functionality")
                         .setPositiveButton("OK", DialogInterface.OnClickListener { dialogInterface, i ->
-                            //Prompt the user once explanation has been shown
                             ActivityCompat.requestPermissions(this@UserMapsActivity,
                                     arrayOf<String>(android.Manifest.permission.ACCESS_FINE_LOCATION),
                                     MY_PERMISSIONS_REQUEST_LOCATION)
@@ -406,7 +470,6 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
                         .create()
                         .show()
             } else {
-                // No explanation needed, we can request the permission.
                 ActivityCompat.requestPermissions(this,
                         arrayOf<String>(android.Manifest.permission.ACCESS_FINE_LOCATION),
                         MY_PERMISSIONS_REQUEST_LOCATION)
@@ -414,15 +477,11 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
         }
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int,
-                                            permissions: Array<String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         when (requestCode) {
             MY_PERMISSIONS_REQUEST_LOCATION -> {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                    // permission was granted, yay! Do the
-                    // location-related task you need to do.
+                if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     if (ContextCompat.checkSelfPermission(this,
                             android.Manifest.permission.ACCESS_FINE_LOCATION) === PackageManager.PERMISSION_GRANTED) {
 
@@ -432,13 +491,10 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
                         mGoogleMap!!.isMyLocationEnabled = true
                     }
                 } else {
-                    // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
                     Toast.makeText(this, "permission denied", Toast.LENGTH_LONG).show()
                 }
                 return
             }
-        }// other 'case' lines to check for other
-        // permissions this app might request
+        }
     }
 }

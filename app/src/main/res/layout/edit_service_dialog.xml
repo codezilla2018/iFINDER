@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/login_bkg"
+    >
+
+
+    <android.support.design.widget.TextInputLayout
+        android:id="@+id/textInputLayout_dialog"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+
+        android:layout_marginEnd="42dp"
+        android:layout_marginStart="42dp"
+        android:layout_marginTop="25dp"
+        android:background="@drawable/my_spinner"
+        app:layout_constraintBottom_toTopOf="@+id/textInputLayout2_dialog"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <android.support.design.widget.TextInputEditText
+            android:id="@+id/service_name_dialog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Service Name"
+            android:editable="false"/>
+    </android.support.design.widget.TextInputLayout>
+
+    <Spinner
+        android:id="@+id/cattegory_spinner_dialog"
+        android:layout_width="300dp"
+        android:layout_height="50dp"
+
+        android:layout_marginEnd="42dp"
+        android:layout_marginStart="42dp"
+        android:layout_marginTop="18dp"
+
+        app:layout_constraintBottom_toTopOf="@+id/pick_location_dialog"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textInputLayout3_dialog" />
+
+    <Button
+        android:id="@+id/pick_location_dialog"
+        android:layout_width="300dp"
+        android:layout_height="40dp"
+
+        android:layout_marginBottom="149dp"
+        android:layout_marginEnd="42dp"
+        android:layout_marginStart="42dp"
+        android:layout_marginTop="25dp"
+        android:background="@drawable/my_btn"
+        android:text="Choose Location"
+        android:textColor="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/cattegory_spinner_dialog" />
+
+    <android.support.design.widget.TextInputLayout
+        android:id="@+id/textInputLayout2_dialog"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="42dp"
+        android:layout_marginStart="42dp"
+        android:layout_marginTop="15dp"
+        android:background="@drawable/my_spinner"
+        app:layout_constraintBottom_toTopOf="@+id/textInputLayout3_dialog"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textInputLayout_dialog">
+
+        <android.support.design.widget.TextInputEditText
+            android:id="@+id/address_service_dialog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Address" />
+    </android.support.design.widget.TextInputLayout>
+
+    <android.support.design.widget.TextInputLayout
+        android:id="@+id/textInputLayout3_dialog"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="42dp"
+        android:layout_marginStart="42dp"
+        android:layout_marginTop="18dp"
+        android:background="@drawable/my_spinner"
+        app:layout_constraintBottom_toTopOf="@+id/cattegory_spinner_dialog"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textInputLayout2_dialog">
+
+        <android.support.design.widget.TextInputEditText
+            android:id="@+id/telephone_service_dialog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Telephone Number"
+            android:inputType="phone" />
+
+    </android.support.design.widget.TextInputLayout>
+</android.support.constraint.ConstraintLayout>

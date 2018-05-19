@@ -5,10 +5,10 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion 27
     defaultConfig {
         applicationId "com.keliya.chickson.ifinder"
-        minSdkVersion 15
+        minSdkVersion 23
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"
@@ -32,15 +32,25 @@ dependencies {
     implementation 'com.google.firebase:firebase-database:11.0.4'
     implementation 'com.google.android.gms:play-services-maps:11.0.4'
     implementation 'com.google.android.gms:play-services-places:11.0.4'
-
+    compile project(':textfieldboxes')
     compile 'com.google.android.gms:play-services:11.0.4'
     compile 'com.firebase:geofire-android:2.3.0'
-
+    compile 'cc.cloudist.acplibrary:library:1.2.1'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     implementation 'com.android.support:design:27.1.1'
+    implementation 'com.google.firebase:firebase-auth:11.0.4'
+
 }
+
+
+
+
+
+
+
+
 
 
 

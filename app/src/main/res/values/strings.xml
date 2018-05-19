@@ -1,4 +1,15 @@
 <resources>
     <string name="app_name">iFINDER</string>
     <string name="title_activity_user_maps">Map</string>
+    <string name="title_activity_admin_maps">Map</string>
+    <string name="title_activity_edit_services">Map</string>
+    <string name="title_activity_maps">Map</string>
+    <string-array name="category_list">
+        <item>Cleaning Service</item>
+        <item>Day Care Serivice</item>
+        <item>Labour Service</item>
+        <item>Security Service</item>
+        <item>Pre School Service</item>
+        <item>Laundry Service</item>
+    </string-array>
 </resources>
