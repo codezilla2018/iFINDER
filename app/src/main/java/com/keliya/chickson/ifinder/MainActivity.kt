@@ -34,9 +34,12 @@ class MainActivity : AppCompatActivity() {
         Thread().run{
             btnEf.buttonEffect(pick_location)
             btnEf.buttonEffect(setting_btn)
+            btnEf. buttonEffect(confirm_btn)
             btnEf. buttonEffect(delete_btn)
         }
-
+        confirm_btn.setOnClickListener { v->
+            startActivity(Intent(this,ConfirmMapsActivity::class.java))
+        }
         pick_location.setOnClickListener { v->
             if(validateForm()) {
                 autoComplete()

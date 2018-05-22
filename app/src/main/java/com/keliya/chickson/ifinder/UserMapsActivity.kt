@@ -1,5 +1,6 @@
 package com.keliya.chickson.ifinder
 
+import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -27,10 +28,15 @@ import com.firebase.geofire.GeoLocation
 import com.firebase.geofire.GeoQuery
 import com.firebase.geofire.GeoQueryEventListener
 import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException
+import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.common.api.GoogleApiClient
 import com.google.android.gms.location.LocationListener
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.places.AutocompleteFilter
+import com.google.android.gms.location.places.ui.PlaceAutocomplete
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -40,6 +46,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_user_maps.*
 
 
@@ -71,7 +78,7 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
         }
         val latLng = LatLng(location.latitude, location.longitude)
         if(first) {
-            updateMap("test", true)
+            updateMap("test", true,LatLng(mLastLocation!!.latitude,mLastLocation!!.longitude))
             first=false
         }
         if(!isCameraFocused){
@@ -87,6 +94,7 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
     var geoFire = GeoFire(ref)
     lateinit var btn:Button
     var first=true
+
     internal var mLocationRequest: LocationRequest?=null
     internal var mGoogleApiClient: GoogleApiClient? = null
     internal var mLastLocation: Location?=null
@@ -94,6 +102,7 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
     var serviceSpinner:Spinner?=null
     lateinit var showAll:Button
     var backButtonCount = 0
+    var PLACE_AUTOCOMPLETE_REQUEST_CODE = 1
     lateinit var  dialogs:ACProgressPie
     internal inner class CustomInfoWindowAdapter : GoogleMap.InfoWindowAdapter {
         private val window: View = layoutInflater.inflate(R.layout.custom_info_window, null)
@@ -143,15 +152,41 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
         Thread().run{
             btnEffect.buttonEffect(btn_select_service)
             btnEffect.buttonEffect(add_service)
+            btnEffect.buttonEffect(search_location)
         }
         btn_select_service.setOnClickListener { v->
             dialodServiceShow()
         }
         add_service.setOnClickListener { v->
-            dialogAdminLogin()
+            val mPrefs = getSharedPreferences("myAppPrefs", Context.MODE_PRIVATE)
+            if(mPrefs.getBoolean("is_first_click_add_services", false)==false){
+                val dialogView=LayoutInflater.from(this).inflate(R.layout.dialog_add_services,null)
+
+                val builder=AlertDialog.Builder(this)
+                        .setView(dialogView)
+
+                        .setPositiveButton("Ok",null)
+                val dialog=builder.show()
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener({
+                    dialog.dismiss()
+                    val editor = mPrefs.edit()
+                    editor.putBoolean("is_first_click_add_services",true)
+                    editor.commit()
+                    startActivity(Intent(this,AddServicesActivity::class.java))
+                })
+
+            }else{
+                startActivity(Intent(this,AddServicesActivity::class.java))
+            }
         }
+        search_location.setOnClickListener({
+            autoComplete()
+        })
         my_location.setOnClickListener { v->
             mGoogleMap.animateCamera(CameraUpdateFactory.newLatLng(LatLng(mLastLocation!!.latitude,mLastLocation!!.longitude)))
+        }
+        admin_login.setOnClickListener { v->
+            dialogAdminLogin()
         }
         dialogs = ACProgressPie.Builder(this)
                 .ringColor(Color.WHITE)
@@ -160,7 +195,45 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
                 .build()
         dialogs.show()
     }
+    fun autoComplete(){
+        try {
 
+            val typeFilter = AutocompleteFilter.Builder()
+                    .setCountry("LK")
+                    .build()
+            val intent = PlaceAutocomplete.IntentBuilder(PlaceAutocomplete.MODE_OVERLAY)
+                    .setFilter(typeFilter)
+                    .build(this)
+
+
+            startActivityForResult(intent, PLACE_AUTOCOMPLETE_REQUEST_CODE)
+        } catch (e: GooglePlayServicesRepairableException) {
+            // TODO: Handle the error.
+        } catch (e: GooglePlayServicesNotAvailableException) {
+            // TODO: Handle the error.
+            val message = "Google Play Services is not available: " + GoogleApiAvailability.getInstance().getErrorString(e.errorCode)
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+    override  fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == PLACE_AUTOCOMPLETE_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                val place = PlaceAutocomplete.getPlace(this, data)
+                val queriedLocation = place.getLatLng()
+                mGoogleMap.animateCamera(CameraUpdateFactory.newLatLng(queriedLocation))
+                updateMap("",true,queriedLocation)
+
+            } else if (resultCode == PlaceAutocomplete.RESULT_ERROR) {
+                val status = PlaceAutocomplete.getStatus(this, data)
+                Toast.makeText(this, ""+status+" error", Toast.LENGTH_SHORT).show()
+
+            } else if (resultCode == RESULT_CANCELED) {
+                Toast.makeText(this, "Cancelled", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    }
     override fun onBackPressed() {
         if (backButtonCount >= 1) {
             val intent = Intent(Intent.ACTION_MAIN)
@@ -196,7 +269,7 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
         val dialog=builder.show()
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener({
             dialog.dismiss()
-            updateMap(serviceSpinner!!.selectedItem.toString(),false)
+            updateMap(serviceSpinner!!.selectedItem.toString(),false,LatLng(mLastLocation!!.latitude,mLastLocation!!.longitude))
 
         })
         val btnEf=ButtonEffects()
@@ -204,7 +277,7 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
             btnEf.buttonEffect(showAll)
         }
         showAll.setOnClickListener { v->
-            updateMap("",true)
+            updateMap("",true, LatLng(mLastLocation!!.longitude,mLastLocation!!.longitude))
             dialog.dismiss()
         }
     }
@@ -231,12 +304,14 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
 
     }
 
-    fun updateMap(selectedIndex:String,firstTime:Boolean){
+    fun updateMap(selectedIndex:String,firstTime:Boolean,locationToSearch:LatLng){
         mGoogleMap.clear()
         if (firstTime) {
-            val geoQuery: GeoQuery = geoFire!!.queryAtLocation(GeoLocation(mLastLocation!!.latitude, mLastLocation!!.longitude), 7.0)
+
+            val geoQuery: GeoQuery = geoFire!!.queryAtLocation(GeoLocation(locationToSearch.latitude, locationToSearch.longitude), 7.0)
             geoQuery.addGeoQueryEventListener(object : GeoQueryEventListener {
                 override fun onKeyEntered(key: String, location: GeoLocation) {
+
                     uref.addValueEventListener( object : ValueEventListener {
                         override fun onDataChange(dataSnapshot: DataSnapshot) {
 
@@ -269,7 +344,7 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
                 }
 
                 override fun onKeyExited(key: String) {
-                    Log.i("TAG", String.format("Provider %s is no longer in the search area", key))
+
 
                 }
 
@@ -289,10 +364,11 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
                 }
 
             })
+
             if(dialogs.isShowing)
                 dialogs.hide()
         }else{
-            val geoQuery: GeoQuery = geoFire!!.queryAtLocation(GeoLocation(mLastLocation!!.latitude, mLastLocation!!.longitude), 7.0)
+            val geoQuery: GeoQuery = geoFire!!.queryAtLocation(GeoLocation(locationToSearch.latitude, locationToSearch.longitude), 7.0)
             geoQuery.addGeoQueryEventListener(object : GeoQueryEventListener {
                 var found=false
                 override fun onKeyEntered(key: String, location: GeoLocation) {
@@ -357,6 +433,7 @@ class UserMapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClien
         }
 
     }
+    
 
     override fun onMapReady(googleMap: GoogleMap) {
         mGoogleMap = googleMap

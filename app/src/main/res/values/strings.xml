@@ -12,4 +12,6 @@
         <item>Pre School Service</item>
         <item>Laundry Service</item>
     </string-array>
+    <string name="title_activity_temp_map">Map</string>
+    <string name="title_activity_confirm_maps">Map</string>
 </resources>

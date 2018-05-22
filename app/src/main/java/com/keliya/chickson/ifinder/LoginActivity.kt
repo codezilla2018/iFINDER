@@ -83,7 +83,7 @@ class LoginActivity : AppCompatActivity() {
         val mPrefs = getSharedPreferences("myAppPrefs", Context.MODE_PRIVATE)
         val editor = mPrefs.edit()
         editor.putString("phone_number", num)
-        editor.putBoolean("edit_profile_first_use",true)
+        editor.putBoolean("is_logged_before",true)
         editor.commit()
     }
 

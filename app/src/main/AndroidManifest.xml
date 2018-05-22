@@ -51,7 +51,14 @@
             android:label="@string/title_activity_maps" />
         <activity android:name=".LocationEnabledCheckActivity" />
         <activity android:name=".NetworkEnableActivity" />
-        <activity android:name=".LoginActivity"></activity>
+        <activity android:name=".LoginActivity" />
+        <activity android:name=".AddServicesActivity" />
+        <activity
+            android:name=".TempMapActivity"
+            android:label="@string/title_activity_temp_map" />
+        <activity
+            android:name=".ConfirmMapsActivity"
+            android:label="@string/title_activity_confirm_maps"></activity>
     </application>
 
 </manifest>
