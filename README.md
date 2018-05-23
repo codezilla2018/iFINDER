@@ -85,6 +85,8 @@ By clicking the icon edit marker in the tool bar of admin dashboard you can edit
 [Firebase Database](https://firebase.google.com/docs/database/)</br>
 [Firebase Authentication](https://firebase.google.com/docs/auth/)</br>
 [Firebase Geofire](https://github.com/firebase/geofire)</br>
+**Used Languages**
+[Kotlin](https://kotlinlang.org/)
 
 ### License
 * [MIT](https://github.com/codezilla2018/iFINDER/blob/master/LICENSE)
