@@ -13,6 +13,13 @@ iFINDER is Domestic services android app with a map. Users can search and get in
 ### Build on 
 * Android Studio 3.0.1
 
+### Tested on
+* Huawei NOVA Lite (Android 7.0) API 24
+* Huawei Y6 II (Android 6.0.1) API 23
+* Huawei P8 Lite (Android 6.0) API 23
+* Samsung Galaxy J7 (Android 7.1) API 25
+* Huawei NOVA 2i (Android 8.0) API 26
+
 ### How to work on iFINDER?
 * Clone the project.
 * Import to Android Studio.
