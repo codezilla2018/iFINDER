@@ -27,6 +27,11 @@ iFINDER is Domestic services android app with a map. Users can search and get in
 * Delete the `google-services.json` file from project.If you are using Android studio 3.0 or above connect to the firebase through Tools>Firebase [(Firebase Documentation)](https://developer.android.com/studio/write/firebase)
 * Update `google_maps_api.xml` file with your google map api key.
 
+### Developer Documentation
+* [Java Documentation](https://github.com/codezilla2018/iFINDER/tree/master/Java%20Documentation)
+Download open `index.html` file in browser.
+
+
 ### Install
 * [Download](https://github.com/codezilla2018/iFINDER/blob/master/APK-demo/iFINDER.apk) APK
 
