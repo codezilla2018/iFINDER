@@ -61,7 +61,7 @@ By clicking the icon edit marker in the tool bar of admin dashboard you can edit
 <img src="https://github.com/chiCKson/iFINDERimages/blob/master/Screenshots/Screenshot_20180519-193337.png" alt="Edit Services" width="160" height="250">
 <img src="https://github.com/chiCKson/iFINDERimages/blob/master/Screenshots/Screenshot_20180519-193407.png" alt="Edit Services" width="160" height="250"></br>You can go back to the user view by clickng the top right icon with humans in the admin dashboard.
 
-
+## Tools and Technologies.
 
 
 **Used Libraries**</br> [TextFieldBoxes](https://github.com/HITGIF/TextFieldBoxes) by HITGIF</br>
@@ -73,3 +73,7 @@ By clicking the icon edit marker in the tool bar of admin dashboard you can edit
 [Firebase Database](https://firebase.google.com/docs/database/)</br>
 [Firebase Authentication](https://firebase.google.com/docs/auth/)</br>
 [Firebase Geofire](https://github.com/firebase/geofire)</br>
+
+### License
+* [MIT](https://github.com/codezilla2018/iFINDER/blob/master/LICENSE)
+
