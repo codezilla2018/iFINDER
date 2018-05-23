@@ -60,7 +60,7 @@ class MainActivity : AppCompatActivity() {
         service_name.setText("")
         address_service.setText("")
         telephone_service.setText("")
-        pick_location.text="CHOOSE LOCATION"
+        pick_location.text="CHOOSE A LOCATION"
 
     }
     fun autoComplete(){
