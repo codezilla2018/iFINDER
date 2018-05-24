@@ -30,6 +30,7 @@ iFINDER is Domestic services android app with a map. Users can search and get in
 ### Developer Documentation
 * [Java Documentation](https://github.com/codezilla2018/iFINDER/tree/master/Java%20Documentation)</br>
  Download this folder and open `index.html` file in browser.
+ </br> You can get information about how app is developed or method used.
 
 
 ### Install
